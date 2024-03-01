@@ -1,0 +1,15 @@
+cmake_minimum_required(VERSION 3.5.0)
+set(R ${CMAKE_SOURCE_DIR}) # a shortcut
+set(version 0.0)
+
+project(main)
+file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS "${R}/src/*.c")
+file(GLOB_RECURSE HEADERS CONFIGURE_DEPENDS "${R}/src/include/*.h")
+set(SOURCES_E ${R}/external/glad/glad.c)
+add_executable(main ${SOURCES} ${HEADERS} ${SOURCES_E})
+
+# add_definitions(-std=c99 -O3)
+target_compile_definitions(main PRIVATE RESOURCES_PATH="${R}/resources/") # TODO change this at runtime
+target_include_directories(main PRIVATE ${R}/src/include)
+target_include_directories(main PRIVATE ${R}/external/include/)
+target_link_libraries(main opengl32 glfw3)
