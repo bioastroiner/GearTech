@@ -2,6 +2,7 @@
 #define GLFW_INCLUDE_NONE
 #define WIDTH 800
 #define HEIGHT 600
+#define GLT_IMPLEMENTATION
 #include "camera.h"
 #include "chunk.h"
 #include "shader.h"
@@ -10,6 +11,7 @@
 #include "world.h"
 #include <GLFW/glfw3.h>
 #include <glad/glad.h>
+#include "gltext.h"
 #include <math.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -20,6 +22,8 @@ static bool render_wireframe = false;
 static bool firstMouse = true;
 static float lastX = WIDTH / 2;
 static float lastY = HEIGHT / 2;
+static GLuint screen_width = WIDTH;
+static GLuint screen_height = HEIGHT;
 GLuint texture_atlas;
 GLuint texture_grass;
 GLuint chunk_shader;
@@ -66,7 +70,12 @@ void mouse_callback(GLFWwindow *window, double xpos, double ypos)
     lastY = ypos;
     camera_proc_mouse(xoffset, yoffset, true);
 }
-void framebuffer_size_callback(GLFWwindow *window, int width, int height) { glViewport(0, 0, width, height); }
+void framebuffer_size_callback(GLFWwindow *window, int width, int height)
+{
+    glViewport(0, 0, width, height);
+    screen_width = width;
+    screen_height = height;
+}
 int gl_init()
 {
     if (!glfwInit())
@@ -111,6 +120,8 @@ int main(void)
     world_generate();
     camera_set_x(0.0f, CHUNK_HEIGHT + 2, 0.0f, 0.0f, 1.0f, 0.0f, -90.0f, 0.0f);
     camera_set_fov(70);
+    gltInit();
+    GLTtext *text = gltCreateText();
     while (!glfwWindowShouldClose(window))
     {
         tick();
@@ -161,9 +172,25 @@ int main(void)
         shader_set_mat4(chunk_shader, "model", model);
         shader_set_float(chunk_shader, "aspect", WIDTH / HEIGHT);
         world_render_tick(player_pos[0], player_pos[1], player_pos[2], chunk_shader);
+        char pos_text[128];
+        sprintf(pos_text, "Player: x:%.1f y:%.1f z:%.1f"
+                          "\nFPS: %.1f"
+                          "\nwidth: %d, height: %d"
+                /*"\nChunk (X:%d Z:%d)"*/,
+                player_pos[0], player_pos[1], player_pos[2],
+                1 / deltaTime,
+                screen_width, screen_height
+                /*,_chunk->x, _chunk->z*/);
+        gltSetText(text, pos_text);
+        gltBeginDraw();
+        gltColor(1.0f, 1.0f, 1.0f, 1.0f);
+        gltDrawText2D(text, 0.0f, 0.0f, 1);
+        gltEndDraw();
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
+    gltDeleteText(text);
+    gltTerminate();
     glfwTerminate();
     return 0;
 }
