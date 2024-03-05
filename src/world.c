@@ -9,10 +9,11 @@
 void world_generate(struct World *world_obj)
 {
     world_obj = calloc(1, sizeof(struct World));
-    world_obj->ChunkMap = calloc(WORLD_SIZE * WORLD_SIZE, sizeof(struct Chunk));
-    world_obj->size = WORLD_SIZE * WORLD_SIZE;
+    unsigned int size = WORLD_SIZE * WORLD_SIZE;
+    world_obj->size = size;
+    world_obj->ChunkMap = calloc(size, sizeof(struct Chunk));
     float timer = glfwGetTime();
-    for (size_t i = 0; i < WORLD_SIZE * WORLD_SIZE; i++)
+    for (size_t i = 0; i < size; i++)
     {
         createNewChunk(i % WORLD_SIZE - WORLD_SIZE / 2, (i / WORLD_SIZE) % WORLD_SIZE - WORLD_SIZE / 2, world_obj, world_obj->ChunkMap + i);
     }
