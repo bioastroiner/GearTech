@@ -178,10 +178,12 @@ int main(void)
         char pos_text[128];
         sprintf(pos_text, "Player: x:%.1f y:%.1f z:%.1f"
                           "\nFPS: %.1f"
+                          "\nrotation: (pitch:%.1f, yaw:%.1f)"
                           "\nwidth: %d, height: %d"
                 /*"\nChunk (X:%d Z:%d)"*/,
                 player_pos[0], player_pos[1], player_pos[2],
                 1 / deltaTime,
+                camera_get_pitch(), camera_get_yaw(),
                 screen_width, screen_height
                 /*,_chunk->x, _chunk->z*/);
         gltSetText(text, pos_text);

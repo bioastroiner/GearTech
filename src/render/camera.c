@@ -126,5 +126,13 @@ void camera_set_pos(float *pos)
 }
 void camera_get_pos(float *pos)
 {
-	glm_vec3_copy(ACTIVE_CAMERA.position, pos);
+    glm_vec3_copy(ACTIVE_CAMERA.position, pos);
+}
+float camera_get_pitch()
+{
+    return ACTIVE_CAMERA.pitch;
+}
+float camera_get_yaw()
+{
+    return ACTIVE_CAMERA.yaw;
 }

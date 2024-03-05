@@ -65,4 +65,6 @@ void camera_perspective_matrix(float aspect, float nearZ, float farZ, float *des
 void camera_perspective_view_matrix(float aspect, float nearZ, float farZ, float *dest);
 void camera_set_fov(float fovIn);
 float camera_fov(void);
+float camera_get_pitch();
+float camera_get_yaw();
 #endif
