@@ -8,7 +8,6 @@
 
 void world_generate(struct World *world_obj)
 {
-    world_obj = calloc(1, sizeof(struct World));
     unsigned int size = WORLD_SIZE * WORLD_SIZE;
     world_obj->size = size;
     world_obj->ChunkMap = calloc(size, sizeof(struct Chunk));
@@ -18,7 +17,6 @@ void world_generate(struct World *world_obj)
         createNewChunk(i % WORLD_SIZE - WORLD_SIZE / 2, (i / WORLD_SIZE) % WORLD_SIZE - WORLD_SIZE / 2, world_obj, world_obj->ChunkMap + i);
     }
     printf("world gen took %f seconds", timer);
-    return world_obj;
 }
 void world_render_tick(int x_player, int y_player, int z_player, struct World *world_obj, unsigned int chunk_shader)
 {
