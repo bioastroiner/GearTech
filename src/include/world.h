@@ -7,9 +7,25 @@
     coordinates as in world (-WORLD_SIZE*8 to +WORLD_SIZE*8 exc) input
     for chunk coordinates (unseigned 0 to 16 exc) use chunk.h
 */
+
+/*
+    Used for easy access to loaded Chunks onto the memory
+    Map size depends on how many chunks are allowed to leave on the memory
+
+    @warning make sure unloaded chunks get written to disk before they get
+    removed from the map.
+
+*/
+struct ChunkMap
+{
+    unsigned int size;
+    struct Chunk **inner_array;
+};
+
 struct World
 {
-    struct Chunk *ChunkMap;
+    struct Chunk *chunks;
+    struct ChunkMap *chunkMap;
     unsigned int size;
 };
 void world_generate(struct World *world_obj);

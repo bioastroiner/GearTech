@@ -148,6 +148,13 @@ void renderChunk(struct Chunk *chunk)
 {
     renderMesh(chunk);
 }
+int hash(int x, int z)
+{
+    int hashcode = 23;
+    hashcode = (hashcode * 37) + x;
+    hashcode = (hashcode * 37) + z;
+    return hashcode;
+}
 void createNewChunk(int x, int z, struct World *world, struct Chunk *_dest)
 {
     _dest->world = world;
@@ -158,6 +165,7 @@ void createNewChunk(int x, int z, struct World *world, struct Chunk *_dest)
     _dest->mesh = NULL;
     _dest->x = x;
     _dest->z = z;
+    _dest->hash = hash(x, z);
     generateBlocksInChunk(_dest);
     createChunkMesh(_dest->blocks, CHUNK_VOLUME, &_dest->mesh, &_dest->mesh_size);
 }

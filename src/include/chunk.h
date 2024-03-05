@@ -15,6 +15,7 @@ struct Chunk
     unsigned int block_count;
     unsigned int mesh_size;
     unsigned char blocks[CHUNK_VOLUME];
+    int hash;
     int x;
     int z;
     float *mesh;
@@ -22,6 +23,7 @@ struct Chunk
 };
 void createNewChunk(int x, int z, struct World *world, struct Chunk *_dest);
 void renderChunk(struct Chunk *chunk);
+int hash(int x, int z);
 void addBlockInChunk(struct Chunk *chunk, int x, int y, int z, unsigned char blockID);
 unsigned char getBlockInChunk(struct Chunk *chunk, int x, int y, int z);
 #endif
