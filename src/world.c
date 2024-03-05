@@ -6,19 +6,20 @@
 #include <GLFW/glfw3.h>
 #include <stdio.h>
 
-struct World *world_obj;
-void world_generate()
+void world_generate(struct World *world_obj)
 {
     world_obj = calloc(1, sizeof(struct World));
     world_obj->ChunkMap = calloc(WORLD_SIZE * WORLD_SIZE, sizeof(struct Chunk));
+    world_obj->size = WORLD_SIZE * WORLD_SIZE;
     float timer = glfwGetTime();
     for (size_t i = 0; i < WORLD_SIZE * WORLD_SIZE; i++)
     {
         createNewChunk(i % WORLD_SIZE - WORLD_SIZE / 2, (i / WORLD_SIZE) % WORLD_SIZE - WORLD_SIZE / 2, world_obj, world_obj->ChunkMap + i);
     }
     printf("world gen took %f seconds", timer);
+    return world_obj;
 }
-void world_render_tick(int x_player, int y_player, int z_player, unsigned int chunk_shader)
+void world_render_tick(int x_player, int y_player, int z_player, struct World *world_obj, unsigned int chunk_shader)
 {
     for (size_t i = 0; i < WORLD_SIZE * WORLD_SIZE; i++)
     {

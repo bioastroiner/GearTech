@@ -24,6 +24,7 @@ static float lastX = WIDTH / 2;
 static float lastY = HEIGHT / 2;
 static GLuint screen_width = WIDTH;
 static GLuint screen_height = HEIGHT;
+struct World *world_obj;
 GLuint texture_atlas;
 GLuint texture_grass;
 GLuint chunk_shader;
@@ -117,7 +118,8 @@ int main(void)
     glm_mat4_identity(proj);
     glm_mat4_identity(view);
     glm_mat4_identity(model);
-    world_generate();
+    world_obj = calloc(sizeof(struct World), 1);
+    world_generate(world_obj);
     camera_set_x(0.0f, CHUNK_HEIGHT + 2, 0.0f, 0.0f, 1.0f, 0.0f, -90.0f, 0.0f);
     camera_set_fov(70);
     gltInit();
@@ -160,7 +162,6 @@ int main(void)
         camera_view_matrix(view);
         camera_perspective_matrix(WIDTH / HEIGHT, 0.1f, 800.0f, proj);
         camera_get_pos(player_pos);
-        // printf("player pos: %.0f,%.0f,%.0f\n", player_pos[0], player_pos[1], player_pos[2]);
         shader_use(chunk_shader);
         shader_set_mat4(chunk_shader, "view", view);
         shader_set_mat4(chunk_shader, "projection", proj);
@@ -171,7 +172,9 @@ int main(void)
         glBindTexture(GL_TEXTURE_2D, texture_atlas);
         shader_set_mat4(chunk_shader, "model", model);
         shader_set_float(chunk_shader, "aspect", WIDTH / HEIGHT);
-        world_render_tick(player_pos[0], player_pos[1], player_pos[2], chunk_shader);
+        world_render_tick(player_pos[0], player_pos[1], player_pos[2], world_obj, chunk_shader);
+        // struct Chunk *_chunk;
+        // world_get_chunk(player_pos[0], player_pos[2], world_obj, _chunk);
         char pos_text[128];
         sprintf(pos_text, "Player: x:%.1f y:%.1f z:%.1f"
                           "\nFPS: %.1f"
