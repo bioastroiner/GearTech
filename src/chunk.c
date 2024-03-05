@@ -41,6 +41,43 @@ unsigned char getBlockInChunk(struct Chunk *chunk, int x, int y, int z)
 {
     return chunk->blocks[(x) + (y)*CHUNK_WIDTH + (z)*CHUNK_WIDTH * CHUNK_WIDTH];
 }
+void removeNonVisibleFaces(unsigned char *blocks, int i, bool *sides)
+{
+    float x = i % CHUNK_WIDTH;
+    float z = (i / CHUNK_WIDTH) % CHUNK_WIDTH;
+    float y = (i / CHUNK_WIDTH / CHUNK_WIDTH) % CHUNK_HEIGHT;
+    for (size_t k = 0; k < 6; k++)
+    {
+        int j = 0;
+        switch (k)
+        {
+        case FRONT:
+            if (!(/*z == 0 ||*/ z == CHUNK_WIDTH - 1))
+                sides[k] = (blocks[i + CHUNK_WIDTH] == 0);
+            break;
+        case BACK:
+            if (!(z == 0 /*|| z == CHUNK_WIDTH - 1*/))
+                sides[k] = (blocks[i - CHUNK_WIDTH] == 0);
+            break;
+        case RIGHT:
+            if (!(/*x == 0 ||*/ x == CHUNK_WIDTH - 1))
+                sides[k] = (blocks[i + 1] == 0);
+            break;
+        case LEFT:
+            if (!(x == 0 /*|| x == CHUNK_WIDTH - 1*/))
+                sides[k] = (blocks[i - 1] == 0);
+            break;
+        case TOP:
+            if (!(/*y == 0 ||*/ y == CHUNK_HEIGHT - 1))
+                sides[k] = (blocks[i + CHUNK_WIDTH * CHUNK_WIDTH] == 0);
+            break;
+        case BOTTOM:
+            if (!(y == 0 /*|| y == CHUNK_HEIGHT - 1*/))
+                sides[k] = (blocks[i - CHUNK_WIDTH * CHUNK_WIDTH] == 0);
+            break;
+        }
+    }
+}
 void createChunkMesh(unsigned char *blocks, unsigned int size, float **_dest_mesh, unsigned int *_dest_size)
 {
     float *vert = (float *)malloc(sizeof(float) * 5 * size * 6 * 6);
@@ -54,39 +91,10 @@ void createChunkMesh(unsigned char *blocks, unsigned int size, float **_dest_mes
         float y = (i / CHUNK_WIDTH / CHUNK_WIDTH) % CHUNK_HEIGHT;
         bool sides[6] = {true, true, true, true, true, true};
         bool remove_nonvisible_faces = true;
-        // calculate renderable faces
         if (remove_nonvisible_faces)
-            for (size_t k = 0; k < 6; k++)
-            {
-                int j = 0;
-                switch (k)
-                {
-                case FRONT:
-                    if (!(/*z == 0 ||*/ z == CHUNK_WIDTH - 1))
-                        sides[k] = (blocks[i + CHUNK_WIDTH] == 0);
-                    break;
-                case BACK:
-                    if (!(z == 0 /*|| z == CHUNK_WIDTH - 1*/))
-                        sides[k] = (blocks[i - CHUNK_WIDTH] == 0);
-                    break;
-                case RIGHT:
-                    if (!(/*x == 0 ||*/ x == CHUNK_WIDTH - 1))
-                        sides[k] = (blocks[i + 1] == 0);
-                    break;
-                case LEFT:
-                    if (!(x == 0 /*|| x == CHUNK_WIDTH - 1*/))
-                        sides[k] = (blocks[i - 1] == 0);
-                    break;
-                case TOP:
-                    if (!(/*y == 0 ||*/ y == CHUNK_HEIGHT - 1))
-                        sides[k] = (blocks[i + CHUNK_WIDTH * CHUNK_WIDTH] == 0);
-                    break;
-                case BOTTOM:
-                    if (!(y == 0 /*|| y == CHUNK_HEIGHT - 1*/))
-                        sides[k] = (blocks[i - CHUNK_WIDTH * CHUNK_WIDTH] == 0);
-                    break;
-                }
-            }
+        {
+            removeNonVisibleFaces(blocks, i, sides);
+        }
         // construct mesh
         for (size_t k = 0; k < 6; k++)
         {
