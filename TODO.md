@@ -629,3 +629,12 @@ and finally we have it fully and efficient mesh optimization! in future i might 
 
 ![image](docs/textured_1.png)
 ![image](docs/wireframe_1.png)
+
+
+
+wgT
+
+
+
+
+

@@ -4,93 +4,112 @@
 #include "utils/timer.h"
 #include <GLFW/glfw3.h>
 #include <stdio.h>
+#include <sys/stat.h>
+#include <dirent.h>
 
-/*
-    @struct Chunk must be allocated by user
-    @warning low level functions, Not designed for auto load and unloading, it won't insert chunks
-    if there is a collision, handle those yourself
-*/
-int putIntoMap(struct ChunkMap *map, struct Chunk *chunk)
+int loadChunkFromDisk(struct World *world_obj, int x, int z, struct Chunk *chunk)
 {
-    // printf("Adding Chunk with hashID: %d to map", chunk->hash);
-    if (chunk == NULL)
+    char fileName[20];
+    int id = hash(x, z);
+    sprintf(fileName, "world/%d.bin", id);
+    FILE *file = fopen(fileName, "r");
+    int dataRed = sizeof(world_obj->loaded_chunks->blocks) / sizeof(char);
+    if (file)
     {
-        sprintf(stderr, "ERROR NULL chunk attempt to add to HashMap %s %d", __FILE__, __LINE__);
+        fread(chunk->blocks, sizeof(char), dataRed, file);
+        return 1;
+    }
+    fprintf(stderr, "could not read chunk with x:%d z:%d\n", x, z);
+    return 0;
+}
+int saveChunkToDisk(struct World *world_obj, struct Chunk *chunk, int x, int z)
+{
+    unsigned int blocks = chunk->block_count;
+    unsigned char *blocksPtr = chunk->blocks;
+    int id = hash(x, z);
+    mkdir("world");
+    if (opendir("world"))
+    {
+        char fileName[20];
+        sprintf(fileName, "world/%d.bin", id);
+        FILE *file = fopen(fileName, "w");
+        if (file)
+        {
+            int dataWritten = sizeof(chunk->blocks) / sizeof(char);
+            fwrite(chunk->blocks, sizeof(char), dataWritten, file);
+            return 1;
+        }
+        fprintf(stderr, "could not create chunk file with x:%d z:%d\n", x, z);
         return 0;
     }
-    if (map->inner_array[chunk->hash % map->size] != NULL)
-    {
-        sprintf(stderr, "ERROR chunk collision detected (x:%d z:%d) place occupied with"
-                        " (x:%d, z:%d)"
-                        " %s %d"
-                        " Failed to add chunk to Map",
-                chunk->x, chunk->z,
-                map->inner_array[chunk->hash % map->size]->x,
-                map->inner_array[chunk->hash % map->size]->z,
-                __FILE__, __LINE__);
-        return 0;
-    }
-    map->inner_array[chunk->hash % map->size] = chunk;
-    return 1;
+    fprintf(stderr, "could not create world directory\n");
+    return 0;
 }
-/*
-    Used for easy access to loaded Chunks onto the memory
-    Map size depends on how many chunks are allowed to leave on the memory
-
-    @warning make sure unloaded chunks get written to disk before they get
-    removed from the map.
-
-    @note functions handles memory of the hashmap dynamically
-    but the chunks must be allocated somewhere since HashMap
-    only stores the pointer to chunks and access them with their IDs.
-    point is to have some chunks loaded on memory and unload the rest
-    as player moves new chunks replace the old ones.
-    increase the size of this map inorder to load more chunks at once.
-*/
-struct ChunkMap *initilizeChunkMap(unsigned int init_size)
+// todo call this method everytime player passes a new chunk, never call it everytick
+void loadChunksAroundPlayer(struct World *world_obj, int x_player, int z_player)
 {
-    struct ChunkMap *map = calloc(init_size, sizeof(struct ChunkMap));
-    if (map == NULL)
+    for (size_t i = 0; i < sizeof(world_obj->loaded_chunks) / sizeof(struct Chunk); i++)
     {
-        sprintf(stderr, "ERROR Intilizing HashMap %s %d", __FILE__, __LINE__);
+        if (world_obj->loaded_chunks + i == NULL)
+            continue;
+        saveChunkToDisk(world_obj, world_obj->loaded_chunks + i, world_obj->loaded_chunks[i].x, world_obj->loaded_chunks[i].z);
     }
-    return map;
-}
-int resizeChunkMap(struct ChunkMap *map, unsigned int newsize)
-{
-    struct ChunkMap *newmap = realloc(map, newsize);
-    if (newmap == NULL)
+    world_obj->loaded_chunks_size = 0;
+    // todo for now we just assume player is at 0,0
+    for (int i = -4; i < 4; i++)
     {
-        sprintf("failed to reallocate HashMap %s %d", __FILE__, __LINE__);
+        for (int j = -4; j < 4; j++)
+        {
+            loadChunkFromDisk(world_obj, i, j, world_obj->loaded_chunks + world_obj->loaded_chunks_size);
+            struct Chunk *chunk = world_obj->loaded_chunks + world_obj->loaded_chunks_size;
+            chunk->x = i;
+            chunk->z = j;
+            chunk->block_count = CHUNK_VOLUME;
+            chunk->world = world_obj;
+            world_obj->loaded_chunks_size++;
+        }
     }
 }
-
+// todo make it to only generate around player
 void world_generate(struct World *world_obj)
 {
     unsigned int size = WORLD_SIZE * WORLD_SIZE;
-    world_obj->size = size;
-    world_obj->chunks = calloc(size, sizeof(struct Chunk));
-    initilizeChunkMap(10);
     float timer = glfwGetTime();
-    for (size_t i = 0; i < size; i++)
+    world_obj->world_size = size;
+    // world_obj->chunks = calloc(size, sizeof(struct Chunk));
+    for (char i = -4; i < 4; i++)
     {
-        // createNewChunk(i % WORLD_SIZE - WORLD_SIZE / 2, (i / WORLD_SIZE) % WORLD_SIZE - WORLD_SIZE / 2, world_obj, world_obj->chunks + i);
-        struct Chunk *chunk = malloc(sizeof(struct Chunk));
-        createNewChunk(i % WORLD_SIZE - WORLD_SIZE / 2, (i / WORLD_SIZE) % WORLD_SIZE - WORLD_SIZE / 2, world_obj, chunk);
+        for (char j = -4; j < 4; j++)
+        {
+            struct Chunk *chunk = malloc(sizeof(struct Chunk));
+            createNewChunk(i, j, world_obj, chunk);
+            generateBlocksInChunk(chunk);
+            saveChunkToDisk(world_obj, chunk, i, j);
+            free(chunk);
+        }
     }
+    loadChunksAroundPlayer(world_obj, 0, 0);
+    // for (size_t i = 0; i < size; i++)
+    // {
+    //     // createNewChunk(i % WORLD_SIZE - WORLD_SIZE / 2, (i / WORLD_SIZE) % WORLD_SIZE - WORLD_SIZE / 2, world_obj, world_obj->chunks + i);
+    //     // initilizeChunk(chunk);
+    // }
     printf("world gen took %f seconds", timer);
 }
 void world_render_tick(int x_player, int y_player, int z_player, struct World *world_obj, unsigned int chunk_shader)
 {
+    // if((int)(ceilf(glfwGetTime()))%60==0)
     for (size_t i = 0; i < WORLD_SIZE * WORLD_SIZE; i++)
     {
+        // check if the chunk needs to be loaded
+        glm_vec2_distance((vec2){x_player, z_player}, (vec2){});
         mat4 trans;
         glm_mat4_identity(trans);
-        glm_translate(trans, (vec3){world_obj->chunks[i].x * 16, 0, world_obj->chunks[i].z * 16});
+        glm_translate(trans, (vec3){world_obj->loaded_chunks[i].x * 16, 0, world_obj->loaded_chunks[i].z * 16});
         // shader_set_vec2(chunk_shader, "chunkPosition", (vec2){world_obj->chunks[i].x, world_obj->chunks[i].z});
         shader_set_vec3i(chunk_shader, "playerPos", (ivec3){x_player, y_player, z_player});
         shader_set_mat4(chunk_shader, "model", trans);
-        renderChunk(world_obj->chunks + i);
+        renderChunk(world_obj->loaded_chunks + i);
     }
 }
 int world_get_chunk(int x, int z, struct World *world, struct Chunk *_dest)
@@ -109,7 +128,7 @@ int world_get_chunk(int x, int z, struct World *world, struct Chunk *_dest)
         sprintf(stderr, "\nTried to Access Invalid Chunk (%d,%d)\n", x >> 4, z >> 4);
         return 0;
     }
-    _dest = world->chunks + ((x >> 4 + WORLD_SIZE / 2) + (z >> 4 + WORLD_SIZE / 2) * WORLD_SIZE);
+    _dest = world->loaded_chunks + ((x >> 4 + WORLD_SIZE / 2) + (z >> 4 + WORLD_SIZE / 2) * WORLD_SIZE);
     return 1;
 }
 unsigned char world_get_block(int x, int y, int z, struct World *world)

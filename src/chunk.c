@@ -41,6 +41,10 @@ unsigned char getBlockInChunk(struct Chunk *chunk, int x, int y, int z)
 {
     return chunk->blocks[(x) + (y)*CHUNK_WIDTH + (z)*CHUNK_WIDTH * CHUNK_WIDTH];
 }
+void compressChunkMesh(float *mesh, unsigned int size, unsigned int *packed_mesh_dest)
+{
+    // x y z u v
+}
 void removeNonVisibleFaces(unsigned char *blocks, int i, bool *sides)
 {
     float x = i % CHUNK_WIDTH;
@@ -166,6 +170,7 @@ void createNewChunk(int x, int z, struct World *world, struct Chunk *_dest)
     _dest->x = x;
     _dest->z = z;
     _dest->hash = hash(x, z);
-    generateBlocksInChunk(_dest);
+}
+void updateChunkMesh(struct Chunk *_dest){
     createChunkMesh(_dest->blocks, CHUNK_VOLUME, &_dest->mesh, &_dest->mesh_size);
 }
